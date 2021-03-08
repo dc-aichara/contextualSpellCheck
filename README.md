@@ -12,13 +12,13 @@ Contextual word checker for better suggestions
 
 ## Types of spelling mistakes
 
-It is essential to understand that identifying whether a candidate is a spelling error is a big task. You can see the below quote from a research paper:
+It is essential to understand that identifying whether a candidate is a spelling error is a big task.
 
 > Spelling errors are broadly classified as non- word errors (NWE) and real word errors (RWE). If the misspelt string is a valid word in the language, then it is called an RWE, else it is an NWE.
 >
 > -- [Monojit Choudhury et. al. (2007)][1]
 
-This package currently focuses on Out of Vocabulary (OOV) word or non-word error (NWE) correction using BERT model. The idea of using BERT was to use the context when correcting OOV. In the coming days, I would like to focus on RWE and optimising the package by implementing it in cython.
+This package currently focuses on Out of Vocabulary (OOV) word or non-word error (NWE) correction using BERT model. The idea of using BERT was to use the context when correcting OOV. To improve this package, I would like to extend the functionality to identify RWE, optimising the package, and improving the documentation.
 
 ## Install
 
@@ -28,26 +28,24 @@ The package can be installed using [pip](https://pypi.org/project/contextualSpel
 pip install contextualSpellCheck
 ```
 
-Also, please install the dependencies from requirements.txt
-
 ## Usage
 
-**Note:** For other language examples check [`examples`](https://github.com/R1j1t/contextualSpellCheck/tree/master/examples) folder. 
+**Note:** For use in other languages check [`examples`](https://github.com/R1j1t/contextualSpellCheck/tree/master/examples) folder.
 
 ### How to load the package in spacy pipeline
 
 ```bash
 >>> import contextualSpellCheck
 >>> import spacy
->>> 
->>> ## We require NER to identify if it is PERSON
->>> ## also require parser because we use Token.sent for context
 >>> nlp = spacy.load("en_core_web_sm") 
 >>> 
->>> contextualSpellCheck.add_to_pipe(nlp)
-<spacy.lang.en.English object at 0x12839a2d0>
+>>> ## We require NER to identify if a token is a PERSON
+>>> ## also require parser because we use `Token.sent` for context
 >>> nlp.pipe_names
-['tagger', 'parser', 'ner', 'contextual spellchecker']
+['tok2vec', 'tagger', 'parser', 'ner', 'attribute_ruler', 'lemmatizer']
+>>> contextualSpellCheck.add_to_pipe(nlp)
+>>> nlp.pipe_names
+['tok2vec', 'tagger', 'parser', 'ner', 'attribute_ruler', 'lemmatizer', 'contextual spellchecker']
 >>> 
 >>> doc = nlp('Income was $9.4 milion compared to the prior year of $2.7 milion.')
 >>> doc._.outcome_spellCheck
@@ -60,19 +58,24 @@ Or you can add to spaCy pipeline manually!
 >>> import spacy
 >>> import contextualSpellCheck
 >>> 
->>> nlp = spacy.load('en')
->>> checker = contextualSpellCheck.contextualSpellCheck.ContextualSpellCheck()
->>> nlp.add_pipe(checker)
+>>> nlp = spacy.load("en_core_web_sm")
+>>> nlp.pipe_names
+['tok2vec', 'tagger', 'parser', 'ner', 'attribute_ruler', 'lemmatizer']
+>>> # You can pass the optional parameters to the contextualSpellCheck
+>>> # eg. pass max edit distance use config={"max_edit_dist": 3}
+>>> nlp.add_pipe("contextual spellchecker")
+<contextualSpellCheck.contextualSpellCheck.ContextualSpellCheck object at 0x1049f82b0>
+>>> nlp.pipe_names
+['tok2vec', 'tagger', 'parser', 'ner', 'attribute_ruler', 'lemmatizer', 'contextual spellchecker']
 >>> 
 >>> doc = nlp("Income was $9.4 milion compared to the prior year of $2.7 milion.")
 >>> print(doc._.performed_spellCheck)
 True
 >>> print(doc._.outcome_spellCheck)
 Income was $9.4 million compared to the prior year of $2.7 million.
-
 ```
 
-After adding contextual spell checker in the pipeline, you use the pipeline normally. The spell check suggestions and other data can be accessed using extensions.
+After adding `contextual spellchecker` in the pipeline, you use the pipeline normally. The spell check suggestions and other data can be accessed using [extensions](#Extensions).
 
 ### Using the pipeline
 
@@ -108,7 +111,7 @@ True
 
 ## Extensions
 
-To make the usage simpler spacy provides custom extensions which a library can use. This makes it easier for the user to get the desired data. contextualSpellCheck provides extensions on the `doc`, `span` and `token` level. Below tables summaries the extensions.
+To make the usage easy, `contextual spellchecker` provides custom spacy extensions which your code can consume. This makes it easier for the user to get the desired data. contextualSpellCheck provides extensions on the `doc`, `span` and `token` level. Below tables summaries the extensions.
 
 ### `spaCy.Doc` level extensions
 
@@ -142,7 +145,7 @@ Query: You can use the endpoint http://127.0.0.1:5000/?query=YOUR-QUERY
 Note: Your browser can handle the text encoding
 
 ```
-http://localhost:5000/?query=Income%20was%20$9.4%20milion%20compared%20to%20the%20prior%20year%20of%20$2.7%20milion.
+GET Request: http://localhost:5000/?query=Income%20was%20$9.4%20milion%20compared%20to%20the%20prior%20year%20of%20$2.7%20milion.
 ```
 
 Response:
@@ -181,21 +184,25 @@ Response:
 
 ## Task List
 
-- [ ] Add support for Real Word Error (RWE) (Big Task)
-- [ ] Include transformers deTokenizer to get better suggestions
-- [ ] edit distance code optimisation
-- [ ] add multi mask out capability
-- [ ] better candidate generation (maybe by fine tuning the model?)
+- [ ] dependency version in setup.py ([#38](https://github.com/R1j1t/contextualSpellCheck/issues/38))
+- [ ] use cython for part of the code to improve performance ([#39](https://github.com/R1j1t/contextualSpellCheck/issues/39))
+- [ ] Improve metric for candidate selection ([#40](https://github.com/R1j1t/contextualSpellCheck/issues/40))
+- [ ] Add examples for other langauges ([#41](https://github.com/R1j1t/contextualSpellCheck/issues/41))
+- [ ] Update the logic of misspell identification (OOV) ([#44](https://github.com/R1j1t/contextualSpellCheck/issues/44))
+- [ ] better candidate generation (solved by [#44](https://github.com/R1j1t/contextualSpellCheck/issues/44)?)
 - [ ] add metric by testing on datasets
 - [ ] Improve documentation
-- [ ] Add examples for other langauges
-- [ ] use piece wise tokeniser when identifying the misspell
+- [ ] Improve logging in code
+- [ ] Add support for Real Word Error (RWE) (Big Task)
+- [ ] add multi mask out capability
 
 <details><summary>Completed Task</summary>
 <p>
 
 - [x] specify maximum edit distance for `candidateRanking`
 - [x] allow user to specify bert model
+- [x] Include transformers deTokenizer to get better suggestions
+
 </p>
 </details>
 
@@ -207,13 +214,14 @@ If you like the project, please ⭑ the project and show your support! Also, if 
 
 Below are some of the projects/work I referred to while developing this package
 
-1. Spacy Documentation and [custom attributes](https://course.spacy.io/en/chapter3)
-2. [HuggingFace's Transformers](https://github.com/huggingface/transformers)
-3. [Norvig's Blog](http://norvig.com/spell-correct.html)
-4. Bert Paper: https://arxiv.org/abs/1810.04805
-5. Denoising words: https://arxiv.org/pdf/1910.14080.pdf
-6. CONTEXT BASED SPELLING CORRECTION (1990)
-7. [How Difficult is it to Develop a Perfect Spell-checker? A Cross-linguistic Analysis through Complex Network Approach](http://citeseerx.ist.psu.edu/viewdoc/download;?doi=10.1.1.146.4390&rep=rep1&type=pdf)
-8. [HuggingFace's neuralcoref](https://github.com/huggingface/neuralcoref) for package design and some of the functions are inspired from them (like add_to_pipe which is an amazing idea!)
+1. Explosion AI.Architecture. May 2020. url:https://spacy.io/api.
+2. Monojit Choudhury et al. “How difficult is it to develop a perfect spell-checker? A cross-linguistic analysis through complex network approach”. In:arXiv preprint physics/0703198(2007).
+3. Jacob Devlin et al. BERT: Pre-training of Deep Bidirectional Transform-ers for Language Understanding. 2019. arXiv:1810.04805 [cs.CL].
+4. Hugging  Face.Fast Coreference Resolution in spaCy with Neural Net-works. May 2020. url:https://github.com/huggingface/neuralcoref.
+5. Ines.Chapter 3: Processing Pipelines. May 20202. url:https://course.spacy.io/en/chapter3.
+6. Eric Mays, Fred J Damerau, and Robert L Mercer. “Context based spellingcorrection”. In:Information Processing & Management27.5 (1991), pp. 517–522.
+7. Peter Norvig. How to Write a Spelling Corrector. May 2020. url:http://norvig.com/spell-correct.html.
+8. Yifu  Sun  and  Haoming  Jiang.Contextual Text Denoising with MaskedLanguage Models. 2019. arXiv:1910.14080 [cs.CL].
+9. Thomas  Wolf  et  al.  “Transformers:  State-of-the-Art  Natural  LanguageProcessing”. In:Proceedings of the 2020 Conference on Empirical Methodsin Natural Language Processing: System Demonstrations. Online: Associ-ation for Computational Linguistics, Oct. 2020, pp. 38–45. url:https://www.aclweb.org/anthology/2020.emnlp-demos.6.
 
 [1]: <http://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=52A3B869596656C9DA285DCE83A0339F?doi=10.1.1.146.4390&rep=rep1&type=pdf>
